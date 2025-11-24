@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.lazuardyapp.ui.screens.LoginScreen
 import com.example.lazuardyapp.ui.screens.RegisterScreen
 import com.example.lazuardyapp.ui.screens.SplashScreen
+import com.example.lazuardyapp.ui.screens.JadwalScreen
 
 @Composable
 fun AppNavigation() {
@@ -32,6 +33,9 @@ fun AppNavigation() {
                     navController.navigate("register")
                 },
                 onLoginSuccess = {
+                    navController.navigate("jadwal") {
+                        popUpTo("login") {inclusive = true}
+                    }
 
                 }
             )
@@ -46,6 +50,17 @@ fun AppNavigation() {
                     navController.navigate("login") {
                         popUpTo("register") { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable("jadwal") {
+            JadwalScreen(
+                onNavigateToHome = {
+                    // Nanti navigate ke dashboard/home
+                },
+                onNavigateToProfile = {
+                    // Nanti navigate ke profil
                 }
             )
         }
