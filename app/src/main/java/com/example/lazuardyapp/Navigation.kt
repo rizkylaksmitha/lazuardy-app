@@ -1,6 +1,10 @@
 package com.example.lazuardyapp
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -8,10 +12,17 @@ import com.example.lazuardyapp.ui.screens.LoginScreen
 import com.example.lazuardyapp.ui.screens.RegisterScreen
 import com.example.lazuardyapp.ui.screens.SplashScreen
 import com.example.lazuardyapp.ui.screens.JadwalScreen
+import com.example.lazuardyapp.ui.screens.ProfileScreen
+import com.example.lazuardyapp.ui.screens.EditProfileScreen
+import com.example.lazuardyapp.ui.screens.UserProfile
+import com.example.lazuardyapp.ui.screens.InitialEmptyProfile
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+
+    // State untuk menyimpan data profil pengguna yang dapat diubah
+    var userProfileState by remember { mutableStateOf(InitialEmptyProfile) }
 
     NavHost(
         navController = navController,
@@ -33,10 +44,19 @@ fun AppNavigation() {
                     navController.navigate("register")
                 },
                 onLoginSuccess = {
-                    navController.navigate("jadwal") {
-                        popUpTo("login") {inclusive = true}
-                    }
+                    // --- LOGIKA PENYIMPANAN DATA UTAMA SAAT LOGIN BERHASIL ---
+                    val userEmailFromLogin = "email_pengguna@contoh.com"
+                    val userPhoneFromLogin = "(+62) 81234567890"
 
+                    userProfileState = userProfileState.copy(
+                        email = userEmailFromLogin,
+                        telepon = userPhoneFromLogin,
+                        nomorWhatsApp = if (userProfileState.nomorWhatsApp.isBlank() || userProfileState.nomorWhatsApp == InitialEmptyProfile.telepon) userPhoneFromLogin else userProfileState.nomorWhatsApp
+                    )
+
+                    navController.navigate("jadwal") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
             )
         }
@@ -57,10 +77,40 @@ fun AppNavigation() {
         composable("jadwal") {
             JadwalScreen(
                 onNavigateToHome = {
-                    // Nanti navigate ke dashboard/home
+                    navController.navigate("jadwal") { popUpTo("jadwal") { inclusive = true } }
                 },
                 onNavigateToProfile = {
-                    // Nanti navigate ke profil
+                    navController.navigate("profile")
+                }
+            )
+        }
+
+        composable("profile") {
+            ProfileScreen(
+                userProfile = userProfileState,
+                onNavigateToHome = {
+                    navController.navigate("jadwal") {
+                        popUpTo("jadwal") { inclusive = true }
+                    }
+                },
+                onNavigateToEditProfile = {
+                    navController.navigate("editProfile")
+                }
+            )
+        }
+
+        composable("editProfile") {
+            EditProfileScreen(
+                currentProfile = userProfileState,
+                onSaveProfile = { updatedProfile ->
+                    userProfileState = updatedProfile.copy(
+                        email = userProfileState.email,
+                        telepon = userProfileState.telepon
+                    )
+                    navController.popBackStack()
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

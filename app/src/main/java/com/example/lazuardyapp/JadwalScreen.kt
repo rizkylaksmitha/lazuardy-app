@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 
 data class Jadwal(
@@ -33,8 +32,8 @@ data class Jadwal(
 )
 @Composable
 fun JadwalScreen(
-    onNavigateToHome: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToHome: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
 
     val primaryColor = Color(0xFF2C8AA4)
@@ -140,7 +139,6 @@ fun JadwalCard(
     primaryColor: Color,
     textColor: Color
 ) {
-
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -264,6 +262,9 @@ fun BottomNavigationBar(
         shadowElevation = 8.dp,
         color = Color.White
     ) {
+        // Divider untuk garis di atas Bottom Nav Bar
+        Divider(color = Color.Gray.copy(alpha = 0.3f), thickness = 1.dp)
+
         NavigationBar(
             containerColor = Color.White,
             modifier = Modifier.height(70.dp)
@@ -290,13 +291,14 @@ fun BottomNavigationBar(
                     selectedTextColor = primaryColor,
                     unselectedIconColor = unselectedColor,
                     unselectedTextColor = unselectedColor,
-                    indicatorColor = Color.Transparent
+                    // Garis bawah/indikator akan muncul jika tidak transparan
+                    indicatorColor = primaryColor.copy(alpha = 0.1f)
                 )
             )
 
             NavigationBarItem(
                 selected = selectedItem == 1,
-                onClick = {  },
+                onClick = {  }, // Sudah di jadwal
                 icon = {
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
@@ -316,7 +318,7 @@ fun BottomNavigationBar(
                     selectedTextColor = primaryColor,
                     unselectedIconColor = unselectedColor,
                     unselectedTextColor = unselectedColor,
-                    indicatorColor = Color.Transparent
+                    indicatorColor = primaryColor.copy(alpha = 0.1f)
                 )
             )
 
@@ -342,7 +344,7 @@ fun BottomNavigationBar(
                     selectedTextColor = primaryColor,
                     unselectedIconColor = unselectedColor,
                     unselectedTextColor = unselectedColor,
-                    indicatorColor = Color.Transparent
+                    indicatorColor = primaryColor.copy(alpha = 0.1f)
                 )
             )
         }
