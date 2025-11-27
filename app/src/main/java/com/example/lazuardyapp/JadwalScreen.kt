@@ -8,9 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,15 +27,18 @@ data class Jadwal(
     val isOnline: Boolean,
     val statusAktif: Boolean
 )
+
 @Composable
 fun JadwalScreen(
     onNavigateToHome: () -> Unit,
+    onNavigateToJadwal: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
 
-    val primaryColor = Color(0xFF2C8AA4)
-    val textColor = Color(0xFF5E6B7B)
-    val backgroundColor = Color(0xFFF7F9FA)
+    val primaryColor = PrimaryColor
+    val textColor = TextColor
+    val backgroundColor = BackgroundColor
+    val screenHorizontalPadding = 32.dp
 
     val jadwalList = remember {
         listOf(
@@ -64,7 +64,6 @@ fun JadwalScreen(
     }
 
     val currentDate = "29 September 2025"
-    val screenHorizontalPadding = 32.dp
 
     Scaffold(
         containerColor = backgroundColor,
@@ -72,6 +71,7 @@ fun JadwalScreen(
             BottomNavigationBar(
                 selectedItem = 1,
                 onNavigateToHome = onNavigateToHome,
+                onNavigateToJadwal = onNavigateToJadwal,
                 onNavigateToProfile = onNavigateToProfile
             )
         }
@@ -147,7 +147,7 @@ fun JadwalCard(
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
-        border = BorderStroke(1.dp, Color(0xFF2C8AA4))
+        border = BorderStroke(1.dp, primaryColor)
     ) {
         Column(
             modifier = Modifier
@@ -159,7 +159,6 @@ fun JadwalCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Chip Online/Offline
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = if (jadwal.isOnline) primaryColor.copy(alpha = 0.1f) else Color(0xFF8B0000).copy(alpha = 0.1f)
@@ -186,7 +185,6 @@ fun JadwalCard(
                     }
                 }
 
-                // Teks Status
                 Text(
                     text = if (jadwal.statusAktif) "Aktif" else "Tidak Aktif",
                     fontSize = 14.sp,
@@ -243,108 +241,6 @@ fun JadwalCard(
                 lineHeight = 18.sp,
                 style = androidx.compose.ui.text.TextStyle(
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    selectedItem: Int,
-    onNavigateToHome: () -> Unit,
-    onNavigateToProfile: () -> Unit
-) {
-    val primaryColor = Color(0xFF2C8AA4)
-    val unselectedColor = Color.Gray
-
-    Surface(
-        shadowElevation = 8.dp,
-        color = Color.White
-    ) {
-        // Divider untuk garis di atas Bottom Nav Bar
-        Divider(color = Color.Gray.copy(alpha = 0.3f), thickness = 1.dp)
-
-        NavigationBar(
-            containerColor = Color.White,
-            modifier = Modifier.height(70.dp)
-        ) {
-            NavigationBarItem(
-                selected = selectedItem == 0,
-                onClick = onNavigateToHome,
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Home,
-                        contentDescription = "Beranda",
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        text = "Beranda",
-                        fontSize = 12.sp,
-                        fontWeight = if (selectedItem == 0) FontWeight.SemiBold else FontWeight.Normal
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = primaryColor,
-                    selectedTextColor = primaryColor,
-                    unselectedIconColor = unselectedColor,
-                    unselectedTextColor = unselectedColor,
-                    // Garis bawah/indikator akan muncul jika tidak transparan
-                    indicatorColor = primaryColor.copy(alpha = 0.1f)
-                )
-            )
-
-            NavigationBarItem(
-                selected = selectedItem == 1,
-                onClick = {  }, // Sudah di jadwal
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "Jadwal",
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        text = "Jadwal",
-                        fontSize = 12.sp,
-                        fontWeight = if (selectedItem == 1) FontWeight.SemiBold else FontWeight.Normal
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = primaryColor,
-                    selectedTextColor = primaryColor,
-                    unselectedIconColor = unselectedColor,
-                    unselectedTextColor = unselectedColor,
-                    indicatorColor = primaryColor.copy(alpha = 0.1f)
-                )
-            )
-
-            NavigationBarItem(
-                selected = selectedItem == 2,
-                onClick = onNavigateToProfile,
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profil",
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        text = "Profil",
-                        fontSize = 12.sp,
-                        fontWeight = if (selectedItem == 2) FontWeight.SemiBold else FontWeight.Normal
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = primaryColor,
-                    selectedTextColor = primaryColor,
-                    unselectedIconColor = unselectedColor,
-                    unselectedTextColor = unselectedColor,
-                    indicatorColor = primaryColor.copy(alpha = 0.1f)
                 )
             )
         }

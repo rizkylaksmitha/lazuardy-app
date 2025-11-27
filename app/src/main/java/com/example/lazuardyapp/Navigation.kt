@@ -14,14 +14,13 @@ import com.example.lazuardyapp.ui.screens.SplashScreen
 import com.example.lazuardyapp.ui.screens.JadwalScreen
 import com.example.lazuardyapp.ui.screens.ProfileScreen
 import com.example.lazuardyapp.ui.screens.EditProfileScreen
-import com.example.lazuardyapp.ui.screens.UserProfile
 import com.example.lazuardyapp.ui.screens.InitialEmptyProfile
+
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // State untuk menyimpan data profil pengguna yang dapat diubah
     var userProfileState by remember { mutableStateOf(InitialEmptyProfile) }
 
     NavHost(
@@ -44,7 +43,6 @@ fun AppNavigation() {
                     navController.navigate("register")
                 },
                 onLoginSuccess = {
-                    // --- LOGIKA PENYIMPANAN DATA UTAMA SAAT LOGIN BERHASIL ---
                     val userEmailFromLogin = "email_pengguna@contoh.com"
                     val userPhoneFromLogin = "(+62) 81234567890"
 
@@ -77,7 +75,10 @@ fun AppNavigation() {
         composable("jadwal") {
             JadwalScreen(
                 onNavigateToHome = {
-                    navController.navigate("jadwal") { popUpTo("jadwal") { inclusive = true } }
+                    navController.popBackStack("jadwal", inclusive = false)
+                },
+                onNavigateToJadwal = {
+                    navController.popBackStack("jadwal", inclusive = false)
                 },
                 onNavigateToProfile = {
                     navController.navigate("profile")
@@ -89,6 +90,11 @@ fun AppNavigation() {
             ProfileScreen(
                 userProfile = userProfileState,
                 onNavigateToHome = {
+                    navController.navigate("jadwal") {
+                        popUpTo("jadwal") { inclusive = true }
+                    }
+                },
+                onNavigateToJadwal = {
                     navController.navigate("jadwal") {
                         popUpTo("jadwal") { inclusive = true }
                     }
