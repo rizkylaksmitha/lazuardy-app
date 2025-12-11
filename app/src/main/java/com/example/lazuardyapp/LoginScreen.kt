@@ -1,7 +1,6 @@
 package com.example.lazuardyapp.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,7 +20,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lazuardyapp.R
@@ -110,15 +108,27 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
-                text = "Daftar sebagai siswa",
-                fontSize = 14.sp,
-                color = secondaryTextColor,
-                modifier = Modifier
-                    .clickable(onClick = onNavigateToRegister)
-                    .padding(vertical = 4.dp),
-                textDecoration = TextDecoration.Underline
-            )
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Belum punya akun?",
+                    fontSize = 14.sp,
+                    color = secondaryTextColor
+                )
+                TextButton(
+                    onClick = onNavigateToRegister,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = "Daftar disini",
+                        fontSize = 14.sp,
+                        color = secondaryTextColor,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lazuardyapp.R
@@ -114,7 +113,7 @@ fun RegisterScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Daftar sebagai siswa",
+                        text = "Daftar sebagai Siswa",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = primaryColor

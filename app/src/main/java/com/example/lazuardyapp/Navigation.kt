@@ -15,6 +15,10 @@ import com.example.lazuardyapp.ui.screens.JadwalScreen
 import com.example.lazuardyapp.ui.screens.ProfileScreen
 import com.example.lazuardyapp.ui.screens.EditProfileScreen
 import com.example.lazuardyapp.ui.screens.InitialEmptyProfile
+import com.example.lazuardyapp.dashboard.DashboardScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.lazuardyapp.tutorselection.TutorSelectionScreen
 
 
 @Composable
@@ -52,7 +56,7 @@ fun AppNavigation() {
                         nomorWhatsApp = if (userProfileState.nomorWhatsApp.isBlank() || userProfileState.nomorWhatsApp == InitialEmptyProfile.telepon) userPhoneFromLogin else userProfileState.nomorWhatsApp
                     )
 
-                    navController.navigate("jadwal") {
+                    navController.navigate("dashboard") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
@@ -72,16 +76,43 @@ fun AppNavigation() {
             )
         }
 
+        composable("dashboard") {
+            DashboardScreen(
+                onNavigateToJadwal = {
+                    navController.navigate("jadwal") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToTutorSelection = { subjectName ->
+                    navController.navigate("tutorSelection/$subjectName")
+                }
+            )
+        }
+
         composable("jadwal") {
             JadwalScreen(
                 onNavigateToHome = {
-                    navController.popBackStack("jadwal", inclusive = false)
+                    navController.navigate("dashboard") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
                 },
                 onNavigateToJadwal = {
-                    navController.popBackStack("jadwal", inclusive = false)
                 },
                 onNavigateToProfile = {
-                    navController.navigate("profile")
+                    navController.navigate("profile") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }
@@ -90,13 +121,15 @@ fun AppNavigation() {
             ProfileScreen(
                 userProfile = userProfileState,
                 onNavigateToHome = {
-                    navController.navigate("jadwal") {
-                        popUpTo("jadwal") { inclusive = true }
+                    navController.navigate("dashboard") {
+                        popUpTo("dashboard") { inclusive = true }
                     }
                 },
                 onNavigateToJadwal = {
                     navController.navigate("jadwal") {
-                        popUpTo("jadwal") { inclusive = true }
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
                     }
                 },
                 onNavigateToEditProfile = {
@@ -118,6 +151,21 @@ fun AppNavigation() {
                 onNavigateBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        composable(
+            route = "tutorSelection/{subjectName}",
+            arguments = listOf(navArgument("subjectName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val subjectName = backStackEntry.arguments?.getString("subjectName") ?: "Semua Pelajaran"
+
+            TutorSelectionScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onTutorSelected = { selectedTutor ->
+                    println("Tutor ${selectedTutor.name} (${selectedTutor.subject}) dipilih!")
+                },
+                selectedSubjectName = subjectName
             )
         }
     }
