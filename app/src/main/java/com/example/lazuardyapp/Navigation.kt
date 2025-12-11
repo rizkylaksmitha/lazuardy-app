@@ -15,6 +15,7 @@ import com.example.lazuardyapp.ui.screens.JadwalScreen
 import com.example.lazuardyapp.ui.screens.ProfileScreen
 import com.example.lazuardyapp.ui.screens.EditProfileScreen
 import com.example.lazuardyapp.ui.screens.InitialEmptyProfile
+import com.example.lazuardyapp.dashboard.DashboardScreen
 
 
 @Composable
@@ -52,7 +53,7 @@ fun AppNavigation() {
                         nomorWhatsApp = if (userProfileState.nomorWhatsApp.isBlank() || userProfileState.nomorWhatsApp == InitialEmptyProfile.telepon) userPhoneFromLogin else userProfileState.nomorWhatsApp
                     )
 
-                    navController.navigate("jadwal") {
+                    navController.navigate("dashboard") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
@@ -72,16 +73,40 @@ fun AppNavigation() {
             )
         }
 
+        composable("dashboard") {
+            DashboardScreen(
+                onNavigateToJadwal = {
+                    navController.navigate("jadwal") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+
         composable("jadwal") {
             JadwalScreen(
                 onNavigateToHome = {
-                    navController.popBackStack("jadwal", inclusive = false)
+                    navController.navigate("dashboard") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
                 },
                 onNavigateToJadwal = {
-                    navController.popBackStack("jadwal", inclusive = false)
                 },
                 onNavigateToProfile = {
-                    navController.navigate("profile")
+                    navController.navigate("profile") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }
@@ -90,13 +115,15 @@ fun AppNavigation() {
             ProfileScreen(
                 userProfile = userProfileState,
                 onNavigateToHome = {
-                    navController.navigate("jadwal") {
-                        popUpTo("jadwal") { inclusive = true }
+                    navController.navigate("dashboard") {
+                        popUpTo("dashboard") { inclusive = true }
                     }
                 },
                 onNavigateToJadwal = {
                     navController.navigate("jadwal") {
-                        popUpTo("jadwal") { inclusive = true }
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
                     }
                 },
                 onNavigateToEditProfile = {

@@ -7,38 +7,39 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.lazuardyapp.ui.screens.TextColor
 
 @Composable
 fun SubjectGridItem(
-    painter: Painter, // Untuk ikon (Drawable/Vector)
-    title: String,    // Judul mata pelajaran
-    onClick: () -> Unit, // Aksi ketika item diklik
+    subject: SubjectItem,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column (
         modifier = modifier
-            .clickable(onClick = onClick) // Membuat seluruh item bisa diklik
-            .padding(8.dp), // Padding di dalam item
-        horizontalAlignment = Alignment.CenterHorizontally // Rata tengah horizontal
+            .clickable(onClick = onClick)
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            painter = painter,
-            contentDescription = title,
-            modifier = Modifier.size(48.dp), // Ukuran ikon
-            tint = MaterialTheme.colorScheme.primary // Warna ikon (opsional)
+            imageVector = subject.iconVector,
+            contentDescription = subject.title,
+            modifier = Modifier.size(48.dp),
+            tint = subject.iconColor
         )
-        Spacer(modifier = Modifier.height(4.dp)) // Jarak antara ikon dan teks
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = title,
-            style = MaterialTheme.typography.bodySmall, // Gaya teks
-            color = MaterialTheme.colorScheme.onSurface
+            text = subject.title,
+            fontSize = 12.sp,
+            color = TextColor,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            lineHeight = 14.sp
         )
     }
 }
