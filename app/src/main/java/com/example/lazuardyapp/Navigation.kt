@@ -19,6 +19,7 @@ import com.example.lazuardyapp.dashboard.DashboardScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.lazuardyapp.tutorselection.TutorSelectionScreen
+import com.example.lazuardyapp.dashboard.DashboardScreen
 
 
 @Composable
@@ -56,7 +57,7 @@ fun AppNavigation() {
                         nomorWhatsApp = if (userProfileState.nomorWhatsApp.isBlank() || userProfileState.nomorWhatsApp == InitialEmptyProfile.telepon) userPhoneFromLogin else userProfileState.nomorWhatsApp
                     )
 
-                    navController.navigate("dashboard") {
+                    navController.navigate("jadwal") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
@@ -98,6 +99,25 @@ fun AppNavigation() {
             )
         }
 
+        composable("dashboard") {
+            DashboardScreen(
+                onNavigateToJadwal = {
+                    navController.navigate("jadwal") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile") {
+                        popUpTo("dashboard") { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+
         composable("jadwal") {
             JadwalScreen(
                 onNavigateToHome = {
@@ -106,6 +126,7 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToJadwal = {
+                    navController.popBackStack("jadwal", inclusive = false)
                 },
                 onNavigateToProfile = {
                     navController.navigate("profile") {

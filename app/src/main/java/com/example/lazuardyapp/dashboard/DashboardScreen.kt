@@ -35,6 +35,19 @@ fun DashboardScreen(
     }
 
 
+fun DashboardScreen(
+    onNavigateToJadwal: () -> Unit,
+    onNavigateToProfile: () -> Unit
+) {
+    val onNavigateToHome: () -> Unit = {}
+
+    var isSubjectGridExpanded by remember { mutableStateOf(false) }
+
+    val toggleExpand: () -> Unit = {
+        isSubjectGridExpanded = !isSubjectGridExpanded
+    }
+
+
     Scaffold(
         containerColor = PrimaryColor,
         bottomBar = {
@@ -82,6 +95,22 @@ fun DashboardScreen(
                     onSubjectClick = { subjectItem ->
                         onNavigateToTutorSelection(subjectItem.title)
                     },
+                    onExpandClick = toggleExpand
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ProgressCard()
+
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SearchPackageCard(
+                    isExpanded = isSubjectGridExpanded,
+                    onSubjectClick = {  },
                     onExpandClick = toggleExpand
                 )
 
