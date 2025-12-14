@@ -23,7 +23,7 @@ import com.example.lazuardyapp.ui.screens.PrimaryColor
 fun DashboardScreen(
     onNavigateToJadwal: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    // TAMBAHAN: Fungsi navigasi baru
+    // Parameter navigasi baru dipertahankan
     onNavigateToTutorSelection: (String) -> Unit
 ) {
     val onNavigateToHome: () -> Unit = {}
@@ -33,20 +33,6 @@ fun DashboardScreen(
     val toggleExpand: () -> Unit = {
         isSubjectGridExpanded = !isSubjectGridExpanded
     }
-
-
-fun DashboardScreen(
-    onNavigateToJadwal: () -> Unit,
-    onNavigateToProfile: () -> Unit
-) {
-    val onNavigateToHome: () -> Unit = {}
-
-    var isSubjectGridExpanded by remember { mutableStateOf(false) }
-
-    val toggleExpand: () -> Unit = {
-        isSubjectGridExpanded = !isSubjectGridExpanded
-    }
-
 
     Scaffold(
         containerColor = PrimaryColor,
@@ -91,26 +77,10 @@ fun DashboardScreen(
 
                 SearchPackageCard(
                     isExpanded = isSubjectGridExpanded,
-                    // PERUBAHAN: Meneruskan aksi navigasi
+                    // Logika navigasi baru dipertahankan
                     onSubjectClick = { subjectItem ->
                         onNavigateToTutorSelection(subjectItem.title)
                     },
-                    onExpandClick = toggleExpand
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                ProgressCard()
-
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-        }
-    }
-                Spacer(modifier = Modifier.height(24.dp))
-
-                SearchPackageCard(
-                    isExpanded = isSubjectGridExpanded,
-                    onSubjectClick = {  },
                     onExpandClick = toggleExpand
                 )
 

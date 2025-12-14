@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lazuardyapp.ui.screens.PrimaryColor
 import kotlin.math.ceil
-import com.example.lazuardyapp.ui.screens.PrimaryColor
-import kotlin.math.ceil
 
 // --- DEFINISI DATA (DIPINDAHKAN KEMBALI UNTUK MENGATASI UNRESOLVED REFERENCE) ---
 
@@ -58,22 +56,6 @@ val allSubjects = listOf(
     SubjectItem(12, Icons.Default.Public, "Geografi", Color(0xFF009688)),
     SubjectItem(13, Icons.Default.Computer, "Informatika", Color(0xFF3F51B5)),
 )
-
-
-val allSubjects = listOf(
-    SubjectItem(1, Icons.Default.Calculate, "Matematika", Color(0xFFC62828)),
-    SubjectItem(2, Icons.Default.FlashOn, "Fisika", Color(0xFF03A9F4)),
-    SubjectItem(3, Icons.Default.Science, "Kimia", Color(0xFFFFC107)),
-    SubjectItem(4, Icons.Default.LocalHospital, "Biologi", Color(0xFF4CAF50)),
-    SubjectItem(5, Icons.Default.Book, "Bahasa Indonesia", Color(0xFF795548)),
-    SubjectItem(6, Icons.Default.Language, "Bahasa Inggris", Color(0xFF00BCD4)),
-    SubjectItem(7, Icons.Default.HistoryEdu, "Sejarah Indonesia", Color(0xFF9C27B0)),
-    SubjectItem(9, Icons.Default.Policy, "PKN", Color(0xFFFFA000)),
-    SubjectItem(10, Icons.Default.MonetizationOn, "Ekonomi", Color(0xFF455A64)),
-    SubjectItem(11, Icons.Default.People, "Sosiologi", Color(0xFF673AB7)),
-    SubjectItem(12, Icons.Default.Public, "Geografi", Color(0xFF009688)),
-    SubjectItem(13, Icons.Default.Computer, "Informatika", Color(0xFF3F51B5)),
-)
 // --- AKHIR DEFINISI DATA ---
 
 
@@ -86,10 +68,6 @@ fun SearchPackageCard(
 
     val subjectsToDisplay = if (isExpanded) allSubjects else defaultSubjects
 
-    val numColumns = 4
-    val rowCount = ceil(subjectsToDisplay.size.toDouble() / numColumns).toInt()
-
-    val totalHeight = (rowCount * 90) + 16
     val numColumns = 4
     // Baris ini sudah benar, tetapi jika ada error kompilasi di sini,
     // pastikan Anda tidak menggunakan properti yang dihapus pada List/Array.
@@ -124,22 +102,6 @@ fun SearchPackageCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.height(totalHeight.dp)
             ) {
-                items(subjectsToDisplay) { subject ->
-
-                    val clickAction: () -> Unit = {
-                        if (subject.title == "Semua Pelajaran" && !isExpanded) {
-                            onExpandClick()
-                        } else {
-                            onSubjectClick(subject)
-                        }
-                    }
-
-                    SubjectGridItem(
-                        subject = subject,
-                        onClick = clickAction,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
                 items(subjectsToDisplay) { subject ->
 
                     val clickAction: () -> Unit = {

@@ -19,11 +19,13 @@ import com.example.lazuardyapp.dashboard.DashboardScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.lazuardyapp.tutorselection.TutorSelectionScreen
-import com.example.lazuardyapp.dashboard.DashboardScreen
+// Pastikan Tutor dan TutorSelectionScreen diimpor dengan benar dari package-nya
+// Jika Anda menempatkan Tutor data class di package com.example.lazuardyapp.tutorselection
+// import com.example.lazuardyapp.tutorselection.Tutor
 
 
 @Composable
-fun AppNavigation() {
+fun Navigation() { // Nama fungsi diganti dari AppNavigation menjadi Navigation
     val navController = rememberNavController()
 
     var userProfileState by remember { mutableStateOf(InitialEmptyProfile) }
@@ -57,7 +59,7 @@ fun AppNavigation() {
                         nomorWhatsApp = if (userProfileState.nomorWhatsApp.isBlank() || userProfileState.nomorWhatsApp == InitialEmptyProfile.telepon) userPhoneFromLogin else userProfileState.nomorWhatsApp
                     )
 
-                    navController.navigate("jadwal") {
+                    navController.navigate("dashboard") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
@@ -93,27 +95,9 @@ fun AppNavigation() {
                         restoreState = true
                     }
                 },
+                // TAMBAHAN: Navigasi ke Tutor Selection
                 onNavigateToTutorSelection = { subjectName ->
                     navController.navigate("tutorSelection/$subjectName")
-                }
-            )
-        }
-
-        composable("dashboard") {
-            DashboardScreen(
-                onNavigateToJadwal = {
-                    navController.navigate("jadwal") {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile") {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
                 }
             )
         }
@@ -126,7 +110,6 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateToJadwal = {
-                    navController.popBackStack("jadwal", inclusive = false)
                 },
                 onNavigateToProfile = {
                     navController.navigate("profile") {
@@ -175,6 +158,7 @@ fun AppNavigation() {
             )
         }
 
+        // RUTE BARU: Tutor Selection
         composable(
             route = "tutorSelection/{subjectName}",
             arguments = listOf(navArgument("subjectName") { type = NavType.StringType })
@@ -184,7 +168,9 @@ fun AppNavigation() {
             TutorSelectionScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onTutorSelected = { selectedTutor ->
+                    // Logika setelah tutor dipilih, misalnya navigasi ke detail paket
                     println("Tutor ${selectedTutor.name} (${selectedTutor.subject}) dipilih!")
+                    // Contoh: navController.navigate("packageDetail/${selectedTutor.id}")
                 },
                 selectedSubjectName = subjectName
             )
