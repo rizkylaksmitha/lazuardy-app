@@ -1,179 +1,103 @@
 package com.example.lazuardyapp
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.lazuardyapp.ui.screens.LoginScreen
-import com.example.lazuardyapp.ui.screens.RegisterScreen
-import com.example.lazuardyapp.ui.screens.SplashScreen
-import com.example.lazuardyapp.ui.screens.JadwalScreen
-import com.example.lazuardyapp.ui.screens.ProfileScreen
-import com.example.lazuardyapp.ui.screens.EditProfileScreen
-import com.example.lazuardyapp.ui.screens.InitialEmptyProfile
-import com.example.lazuardyapp.dashboard.DashboardScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+
+import com.example.lazuardyapp.dashboard.DashboardScreen
 import com.example.lazuardyapp.tutorselection.TutorSelectionScreen
-// Pastikan Tutor dan TutorSelectionScreen diimpor dengan benar dari package-nya
-// Jika Anda menempatkan Tutor data class di package com.example.lazuardyapp.tutorselection
-// import com.example.lazuardyapp.tutorselection.Tutor
+import com.example.lazuardyapp.pilihpaket.PilihPaketBelajarScreen
+import com.example.lazuardyapp.ui.screens.LoginScreen
+import com.example.lazuardyapp.ui.screens.RegisterScreen
+
+
+object Screens {
+    const val LOGIN = "login_screen"
+    const val REGISTER = "register_screen"
+    const val DASHBOARD = "dashboard_screen"
+    const val PROFILE = "profile_screen"
+    const val JADWAL = "schedule_screen"
+    const val TUTOR_SELECTION = "tutor_selection_screen/{subjectName}"
+    const val PILIH_PAKET = "pilih_paket_belajar_screen/{tutorId}"
+}
 
 
 @Composable
-fun Navigation() { // Nama fungsi diganti dari AppNavigation menjadi Navigation
+fun Navigation() {
     val navController = rememberNavController()
-
-    var userProfileState by remember { mutableStateOf(InitialEmptyProfile) }
 
     NavHost(
         navController = navController,
-        startDestination = "splash"
+        startDestination = Screens.LOGIN
     ) {
-        composable("splash") {
-            SplashScreen(
-                onTimeout = {
-                    navController.navigate("login") {
-                        popUpTo("splash") { inclusive = true }
-                    }
-                }
-            )
-        }
 
-        composable("login") {
+        composable(Screens.LOGIN) {
             LoginScreen(
-                onNavigateToRegister = {
-                    navController.navigate("register")
-                },
                 onLoginSuccess = {
-                    val userEmailFromLogin = "email_pengguna@contoh.com"
-                    val userPhoneFromLogin = "(+62) 81234567890"
-
-                    userProfileState = userProfileState.copy(
-                        email = userEmailFromLogin,
-                        telepon = userPhoneFromLogin,
-                        nomorWhatsApp = if (userProfileState.nomorWhatsApp.isBlank() || userProfileState.nomorWhatsApp == InitialEmptyProfile.telepon) userPhoneFromLogin else userProfileState.nomorWhatsApp
-                    )
-
-                    navController.navigate("dashboard") {
-                        popUpTo("login") { inclusive = true }
+                    navController.navigate(Screens.DASHBOARD) {
+                        popUpTo(Screens.LOGIN) { inclusive = true }
                     }
-                }
+                },
+                onNavigateToRegister = { navController.navigate(Screens.REGISTER) }
             )
         }
 
-        composable("register") {
+        composable(Screens.REGISTER) {
             RegisterScreen(
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                },
+                onNavigateToLogin = { navController.popBackStack() },
                 onRegisterSuccess = {
-                    navController.navigate("login") {
-                        popUpTo("register") { inclusive = true }
+                    navController.navigate(Screens.DASHBOARD) {
+                        popUpTo(Screens.REGISTER) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable("dashboard") {
+        composable(Screens.DASHBOARD) {
             DashboardScreen(
-                onNavigateToJadwal = {
-                    navController.navigate("jadwal") {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile") {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                // TAMBAHAN: Navigasi ke Tutor Selection
+                onNavigateToJadwal = { navController.navigate(Screens.JADWAL) },
+                onNavigateToProfile = { navController.navigate(Screens.PROFILE) },
                 onNavigateToTutorSelection = { subjectName ->
-                    navController.navigate("tutorSelection/$subjectName")
+                    navController.navigate(Screens.TUTOR_SELECTION.replace("{subjectName}", subjectName))
                 }
             )
         }
 
-        composable("jadwal") {
-            JadwalScreen(
-                onNavigateToHome = {
-                    navController.navigate("dashboard") {
-                        popUpTo("dashboard") { inclusive = true }
-                    }
-                },
-                onNavigateToJadwal = {
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile") {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
-
-        composable("profile") {
-            ProfileScreen(
-                userProfile = userProfileState,
-                onNavigateToHome = {
-                    navController.navigate("dashboard") {
-                        popUpTo("dashboard") { inclusive = true }
-                    }
-                },
-                onNavigateToJadwal = {
-                    navController.navigate("jadwal") {
-                        popUpTo("dashboard") { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onNavigateToEditProfile = {
-                    navController.navigate("editProfile")
-                }
-            )
-        }
-
-        composable("editProfile") {
-            EditProfileScreen(
-                currentProfile = userProfileState,
-                onSaveProfile = { updatedProfile ->
-                    userProfileState = updatedProfile.copy(
-                        email = userProfileState.email,
-                        telepon = userProfileState.telepon
-                    )
-                    navController.popBackStack()
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        // RUTE BARU: Tutor Selection
         composable(
-            route = "tutorSelection/{subjectName}",
+            route = Screens.TUTOR_SELECTION,
             arguments = listOf(navArgument("subjectName") { type = NavType.StringType })
         ) { backStackEntry ->
-            val subjectName = backStackEntry.arguments?.getString("subjectName") ?: "Semua Pelajaran"
+            val selectedSubject = backStackEntry.arguments?.getString("subjectName") ?: "Semua Pelajaran"
 
             TutorSelectionScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onTutorSelected = { selectedTutor ->
-                    // Logika setelah tutor dipilih, misalnya navigasi ke detail paket
-                    println("Tutor ${selectedTutor.name} (${selectedTutor.subject}) dipilih!")
-                    // Contoh: navController.navigate("packageDetail/${selectedTutor.id}")
-                },
-                selectedSubjectName = subjectName
+                selectedSubjectName = selectedSubject,
+                onTutorSelected = { tutor ->
+                    navController.navigate(Screens.PILIH_PAKET.replace("{tutorId}", tutor.id.toString()))
+                }
             )
+        }
+
+        composable(
+            route = Screens.PILIH_PAKET,
+            arguments = listOf(navArgument("tutorId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val tutorId = backStackEntry.arguments?.getInt("tutorId") ?: 0
+
+            PilihPaketBelajarScreen(
+                tutorId = tutorId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screens.PROFILE) {
+            /* Isi dengan ProfileScreen() Anda */
+        }
+        composable(Screens.JADWAL) {
+            /* Isi dengan JadwalScreen() */
         }
     }
 }
