@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.example.lazuardyapp.dashboard.DashboardScreen
 import com.example.lazuardyapp.tutorselection.TutorSelectionScreen
 import com.example.lazuardyapp.pilihpaket.PilihPaketBelajarScreen
+import com.example.lazuardyapp.paymentscreen.PaymentScreen // <-- IMPORT BARU
 import com.example.lazuardyapp.ui.screens.LoginScreen
 import com.example.lazuardyapp.ui.screens.RegisterScreen
 
@@ -22,6 +23,7 @@ object Screens {
     const val JADWAL = "schedule_screen"
     const val TUTOR_SELECTION = "tutor_selection_screen/{subjectName}"
     const val PILIH_PAKET = "pilih_paket_belajar_screen/{tutorId}"
+    const val PAYMENT = "payment_screen/{packageId}" // <-- RUTE BARU
 }
 
 
@@ -89,6 +91,23 @@ fun Navigation() {
 
             PilihPaketBelajarScreen(
                 tutorId = tutorId,
+                onNavigateBack = { navController.popBackStack() },
+                // IMPLEMENTASI NAVIGASI KE PAYMENT
+                onNavigateToPayment = { packageId ->
+                    navController.navigate(Screens.PAYMENT.replace("{packageId}", packageId.toString()))
+                }
+            )
+        }
+
+        // RUTE BARU: PAYMENT
+        composable(
+            route = Screens.PAYMENT,
+            arguments = listOf(navArgument("packageId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val packageId = backStackEntry.arguments?.getInt("packageId") ?: 0
+
+            PaymentScreen(
+                packageId = packageId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
