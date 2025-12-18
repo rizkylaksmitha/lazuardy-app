@@ -22,22 +22,24 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lazuardyapp.R
+import com.example.lazuardyapp.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onNavigateToDashboard: () -> Unit,
+    viewModel: LoginViewModel = viewModel()
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(false) }
+    // 1. STATE DITARIK DARI VIEW MODEL
+    val email = viewModel.email
+    val password = viewModel.password
+    val rememberMe = viewModel.rememberMe
+    val isLoading = viewModel.isLoading
+    val loginStatusMessage = viewModel.loginStatusMessage
 
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-    var showSnackbar by remember { mutableStateOf(false) }
-    var snackbarMessage by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val primaryColor = Color(0xFF3892A4)
     val secondaryTextColor = Color(0xFF6B7280)
@@ -46,35 +48,10 @@ fun LoginScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    fun validateLogin(): Boolean {
-        var isValid = true
-        if (email.isEmpty()) {
-            emailError = "Email tidak boleh kosong"
-            isValid = false
-        } else if (!isValidEmail(email)) {
-            emailError = "Format email tidak valid"
-            isValid = false
-        } else {
-            emailError = null
-        }
-
-        if (password.isEmpty()) {
-            passwordError = "Password tidak boleh kosong"
-            isValid = false
-        } else {
-            passwordError = null
-        }
-        return isValid
-    }
-
-    LaunchedEffect(showSnackbar) {
-        if (showSnackbar) {
-            snackbarHostState.showSnackbar(snackbarMessage)
-            showSnackbar = false
+    LaunchedEffect(loginStatusMessage) {
+        if (loginStatusMessage.isNotEmpty() && !loginStatusMessage.contains("Berhasil")) {
+            snackbarHostState.showSnackbar(loginStatusMessage)
+            viewModel.loginStatusMessage = ""
         }
     }
 
@@ -143,7 +120,7 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { viewModel.email = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Email Anda", color = Color.Gray) },
                 leadingIcon = {
@@ -156,6 +133,7 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true,
                 shape = RoundedCornerShape(8.dp),
+                enabled = !isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = primaryColor,
                     unfocusedBorderColor = inputBorderColor,
@@ -178,7 +156,7 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { viewModel.password = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Kata sandi Anda", color = Color.Gray) },
                 leadingIcon = {
@@ -201,6 +179,7 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
                 shape = RoundedCornerShape(8.dp),
+                enabled = !isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = primaryColor,
                     unfocusedBorderColor = inputBorderColor,
@@ -220,7 +199,7 @@ fun LoginScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = rememberMe,
-                        onCheckedChange = { rememberMe = it },
+                        onCheckedChange = { viewModel.rememberMe = it },
                         colors = CheckboxDefaults.colors(
                             checkedColor = primaryColor,
                             uncheckedColor = inputBorderColor
@@ -236,24 +215,41 @@ fun LoginScreen(
                 }
             }
 
+            if (loginStatusMessage.isNotEmpty() && !isLoading && loginStatusMessage.contains("Berhasil")) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = loginStatusMessage,
+                    color = Color.Green.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = onLoginSuccess,
+                onClick = {
+                    viewModel.performLogin(onNavigateToDashboard)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor
                 ),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                enabled = !isLoading
             ) {
-                Text(
-                    text = "Masuk",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text(
+                        text = "Masuk",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
             }
         }
 

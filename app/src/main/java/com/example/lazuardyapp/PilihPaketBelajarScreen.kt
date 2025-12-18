@@ -1,7 +1,7 @@
 package com.example.lazuardyapp.pilihpaket
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image // <-- Import Image dipertahankan
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,29 +16,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource // <-- Import painterResource dipertahankan
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lazuardyapp.R
+import com.example.lazuardyapp.SelectedPackageData
+import com.example.lazuardyapp.viewmodel.PaymentViewModel
+import com.example.lazuardyapp.tutorselection.sampleTutors
+import com.example.lazuardyapp.tutorselection.Tutor
 import java.text.NumberFormat
 import java.util.Locale
 
-// --- ASUMSI DATA & WARNA ---
 data class Tutor(val id: Int, val name: String, val subject: String)
-val sampleTutor = Tutor(id = 1, name = "Budi Santoso", subject = "Matematika")
+val sampleTutors = listOf(Tutor(id = 1, name = "Budi Hartono", subject = "Matematika"))
 
-// PERBAIKAN: Mengatur harga dasar per sesi agar sesuai dengan gambar (4 sesi = 200.000)
 const val BASE_PRICE_PER_SESSION = 50000
-
-val PrimaryColor = Color(0xFF3892A4) // Warna utama (Teal/Biru)
-val PackageBorderColor = PrimaryColor
+val PrimaryColor = Color(0xFF3892A4)
 val TextColor = Color(0xFF333333)
-val CheckColor = PrimaryColor
 val DividerColor = Color(0xFFE0E0E0)
-val PriceColor = Color(0xFFE53935) // Warna Merah untuk Harga (sesuai gambar)
+val PriceColor = Color(0xFFE53935)
+val SelectedBorderColor = PrimaryColor
 
-// --- DATA MODEL PAKET BELAJAR (DITAMBAH ID) ---
 data class LearningPackage(
     val id: Int,
     val sessions: Int,
@@ -46,7 +46,6 @@ data class LearningPackage(
     val benefits: List<String>
 )
 
-// List paket belajar (4, 8, 12, 16 pertemuan)
 val packages = listOf(4, 8, 12, 16).map { sessions ->
     LearningPackage(
         id = sessions,
@@ -61,25 +60,36 @@ val packages = listOf(4, 8, 12, 16).map { sessions ->
     )
 }
 
-// Fungsi format Rupiah
 fun formatRupiah(number: Int): String {
     val format = NumberFormat.getCurrencyInstance(Locale("in", "ID"))
     return format.format(number).replace("Rp", "Rp ").replace(",00", "")
 }
-
-// =================================================================
-// KOMPONEN UTAMA
-// =================================================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PilihPaketBelajarScreen(
     tutorId: Int,
     onNavigateBack: () -> Unit,
-    onNavigateToPayment: (packageId: Int) -> Unit
+    onNavigateToPayment: () -> Unit,
+    paymentViewModel: PaymentViewModel = viewModel()
 ) {
+
+    val selectedTutor = remember(tutorId) {
+        sampleTutors.find { it.id == tutorId } ?: sampleTutors.find { it.id == 1 }
+    }
+
     var selectedPackage by remember { mutableStateOf<LearningPackage?>(packages.firstOrNull()) }
-    val tutor = if (tutorId == sampleTutor.id) sampleTutor else null
+
+    if (selectedTutor == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "Error: Data tutor tidak ditemukan.",
+                color = Color.Red,
+                fontSize = 18.sp
+            )
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -103,87 +113,105 @@ fun PilihPaketBelajarScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryColor)
             )
         },
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(
+                    onClick = {
+                        val pkg = selectedPackage
+                        if (pkg != null) {
+
+                            val selectedData = SelectedPackageData(
+                                packageId = pkg.id,
+                                packageName = "Paket ${pkg.sessions}x Pertemuan",
+                                totalSessions = pkg.sessions,
+                                tutorName = selectedTutor.name,
+                                subject = selectedTutor.subject,
+                                scheduleDays = listOf("Senin", "Rabu", "Jumat")
+                            )
+
+                            paymentViewModel.setPackageForPayment(selectedData)
+
+                            onNavigateToPayment()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                    enabled = selectedPackage != null
+                ) {
+                    Text(
+                        text = "Lanjut Pembayaran (${formatRupiah(selectedPackage?.price ?: 0)})",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF4F4F4)), // Background abu-abu muda
+                .background(Color(0xFFF4F4F4)),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            // Info Tutor (Dipertahankan, meskipun tidak ada di gambar Pilih Paket)
             item {
-                if (tutor != null) {
-                    Text(
-                        text = "Paket Belajar dengan ${tutor.name} (${tutor.subject})",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextColor,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-            }
-
-            // List Kartu Paket
-            items(packages) { pkg ->
-                PackageCard(
-                    pkg = pkg,
-                    // Di layar Pilih Paket, tidak ada indikasi "Terpilih" yang mencolok
-                    isSelected = false,
-                    onSelect = { selected ->
-                        selectedPackage = selected
-                        onNavigateToPayment(selected.id)
-                    }
+                Text(
+                    text = "Paket Belajar dengan ${selectedTutor.name} (${selectedTutor.subject})",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextColor,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
 
-            // Spacer akhir
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
+            items(packages) { pkg ->
+                PackageCard(
+                    pkg = pkg,
+                    isSelected = pkg.id == selectedPackage?.id,
+                    onSelect = { selected ->
+                        selectedPackage = selected
+                    }
+                )
             }
         }
     }
 }
 
-// =================================================================
-// KOMPONEN CARD PAKET (Diperbarui agar sama persis dengan gambar)
-// =================================================================
-
 @Composable
 fun PackageCard(pkg: LearningPackage, isSelected: Boolean, onSelect: (LearningPackage) -> Unit) {
-
-    // Border berwarna abu-abu tipis seperti di gambar
-    val borderColor = Color(0xFFE0E0E0)
-    val buttonContainerColor = PrimaryColor
-
+    val borderColor = if (isSelected) SelectedBorderColor else DividerColor
     Card(
         modifier = Modifier
             .fillMaxWidth()
-        // Di gambar, klik tombol yang memicu aksi, bukan klik Card secara keseluruhan
-        // .clickable { onSelect(pkg) },
-        ,
+            .clickable { onSelect(pkg) },
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, borderColor), // Border lebih tipis (1.dp)
+        border = BorderStroke(2.dp, borderColor),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Tanpa shadow
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // --- HEADER PAKET (Icon + Text) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ikon Buku (Digambar sebagai Image resource)
                 Image(
                     painter = painterResource(id = R.drawable.ic_book_light),
                     contentDescription = "Ikon Paket",
-                    modifier = Modifier.size(40.dp) // Ukuran ikon disesuaikan
+                    modifier = Modifier.size(40.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp)) // Spacer sedikit dikurangi
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = "Paket ${pkg.sessions}x Pertemuan",
@@ -194,38 +222,40 @@ fun PackageCard(pkg: LearningPackage, isSelected: Boolean, onSelect: (LearningPa
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = formatRupiah(pkg.price),
-                        fontSize = 18.sp, // Ukuran harga disesuaikan
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PriceColor // Warna Harga Merah
+                        color = PriceColor
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Terpilih",
+                        tint = SelectedBorderColor,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
-
-            // Garis Pemisah (Tidak ada di gambar antara harga dan benefit)
-            // Divider(modifier = Modifier.padding(vertical = 12.dp), color = DividerColor)
-
             Spacer(modifier = Modifier.height(16.dp))
-
             Text(
                 text = "Kamu akan mendapatkan:",
                 fontSize = 14.sp,
                 color = TextColor,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
-            // --- LIST BENEFIT ---
             pkg.benefits.forEach { benefit ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp), // Padding vertical dikurangi
+                        .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Check",
-                        tint = PrimaryColor, // Warna ceklist biru
-                        modifier = Modifier.size(16.dp) // Ukuran ceklist dikurangi
+                        tint = PrimaryColor,
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -235,29 +265,7 @@ fun PackageCard(pkg: LearningPackage, isSelected: Boolean, onSelect: (LearningPa
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- TOMBOL PILIH PAKET ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End // Ditarik ke kanan
-            ) {
-                Button(
-                    onClick = { onSelect(pkg) },
-                    modifier = Modifier
-                        .height(40.dp)
-                        .width(120.dp), // Lebar tombol disesuaikan
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonContainerColor)
-                ) {
-                    Text(
-                        text = "Pilih Paket", // Selalu "Pilih Paket" di layar ini
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

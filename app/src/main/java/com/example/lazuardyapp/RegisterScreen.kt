@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person // Diperlukan untuk input Nama
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -25,26 +26,39 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel // <-- Wajib untuk ViewModel
 import com.example.lazuardyapp.R
+import com.example.lazuardyapp.viewmodel.RegisterViewModel // <-- IMPORT VIEW MODEL BARU
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onNavigateToDashboard: () -> Unit,
+    viewModel: RegisterViewModel = viewModel()
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    // 1. STATE DITARIK DARI VIEW MODEL
+    val name = viewModel.name
+    val email = viewModel.email
+    val password = viewModel.password
+    val confirmPassword = viewModel.confirmPassword
+    val isLoading = viewModel.isLoading
+    val registerStatusMessage = viewModel.registerStatusMessage
+
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
-
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
-    var showSnackbar by remember { mutableStateOf(false) }
-    var snackbarMessage by remember { mutableStateOf("") }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(registerStatusMessage) {
+        if (registerStatusMessage.isNotEmpty() && !registerStatusMessage.contains("Berhasil")) {
+            snackbarHostState.showSnackbar(registerStatusMessage)
+        }
+    }
 
     val primaryColor = Color(0xFF3892A4)
     val secondaryTextColor = Color(0xFF6B7280)
@@ -53,28 +67,8 @@ fun RegisterScreen(
     val backgroundColor = Color(0xFFFFFFFF)
 
     val scrollState = rememberScrollState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val screenHorizontalPadding = 32.dp
 
-    fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    fun validateRegister(): Boolean {
-        var isValid = true
-        if (email.isEmpty()) { emailError = "Email tidak boleh kosong"; isValid = false }
-        else if (!isValidEmail(email)) { emailError = "Format email tidak valid"; isValid = false }
-        else { emailError = null }
-
-        if (password.isEmpty()) { passwordError = "Password tidak boleh kosong"; isValid = false }
-        else if (password.length < 8) { passwordError = "Password minimal 8 karakter"; isValid = false }
-        else { passwordError = null }
-
-        if (confirmPassword.isEmpty()) { confirmPasswordError = "Konfirmasi password tidak boleh kosong"; isValid = false }
-        else if (confirmPassword != password) { confirmPasswordError = "Password tidak cocok"; isValid = false }
-        else { confirmPasswordError = null }
-        return isValid
-    }
 
     Scaffold(
         topBar = {
@@ -141,6 +135,28 @@ fun RegisterScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Nama Lengkap",
+                        fontSize = 14.sp,
+                        color = secondaryTextColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { viewModel.name = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Nama Lengkap Anda", color = Color.Gray) },
+                        leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Name Icon", tint = secondaryTextColor) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        enabled = !isLoading,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, unfocusedBorderColor = inputBorderColor, unfocusedLeadingIconColor = secondaryTextColor, focusedLeadingIconColor = primaryColor, cursorColor = primaryColor)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
                         text = "Email",
                         fontSize = 14.sp,
@@ -150,13 +166,14 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = { viewModel.email = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Email Anda", color = Color.Gray) },
                         leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = "Email Icon", tint = secondaryTextColor) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true,
                         shape = RoundedCornerShape(8.dp),
+                        enabled = !isLoading,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, unfocusedBorderColor = inputBorderColor, unfocusedLeadingIconColor = secondaryTextColor, focusedLeadingIconColor = primaryColor, cursorColor = primaryColor)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -172,7 +189,7 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { viewModel.password = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Kata sandi Anda", color = Color.Gray) },
                         leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Password Icon", tint = secondaryTextColor) },
@@ -181,6 +198,7 @@ fun RegisterScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
                         shape = RoundedCornerShape(8.dp),
+                        enabled = !isLoading,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, unfocusedBorderColor = inputBorderColor, unfocusedLeadingIconColor = secondaryTextColor, focusedLeadingIconColor = primaryColor, cursorColor = primaryColor)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -189,7 +207,7 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
+                        onValueChange = { viewModel.confirmPassword = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Konfirmasi kata sandi Anda", color = Color.Gray) },
                         leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Confirm Password Icon", tint = secondaryTextColor) },
@@ -198,6 +216,7 @@ fun RegisterScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
                         shape = RoundedCornerShape(8.dp),
+                        enabled = !isLoading,
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, unfocusedBorderColor = inputBorderColor, unfocusedLeadingIconColor = secondaryTextColor, focusedLeadingIconColor = primaryColor, cursorColor = primaryColor)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -207,10 +226,21 @@ fun RegisterScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = "Ingat saya", fontSize = 14.sp, color = secondaryTextColor)
                     }
+
+                    if (registerStatusMessage.isNotEmpty() && !isLoading) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = registerStatusMessage,
+                            color = if (registerStatusMessage.contains("Berhasil")) Color.Green.copy(alpha = 0.8f) else Color.Red,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
 
                 Button(
-                    onClick = onRegisterSuccess,
+                    onClick = {
+                        viewModel.performRegister(onNavigateToLogin)
+                    },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
@@ -219,14 +249,19 @@ fun RegisterScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = buttonColor
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isLoading
                 ) {
-                    Text(
-                        text = "Daftar",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                    } else {
+                        Text(
+                            text = "Daftar",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
                 }
 
                 SnackbarHost(

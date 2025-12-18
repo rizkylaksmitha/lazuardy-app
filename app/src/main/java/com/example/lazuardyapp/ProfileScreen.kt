@@ -13,6 +13,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import com.google.gson.Gson
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.lazuardyapp.viewmodel.ProfileViewModel
 import java.util.*
 
 data class UserProfile(
@@ -34,8 +38,8 @@ data class UserProfile(
     val tanggalLahir: String = "",
     val agama: String = "",
     val nomorWhatsApp: String = "",
-    val namaOrtuWali: String = "Kurniawati",
-    val nomorWaOrtuWali: String = "(+62) 81122334455",
+    val namaOrtuWali: String = "",
+    val nomorWaOrtuWali: String = "",
     val provinsi: String = "",
     val kotaKabupaten: String = "",
     val kecamatan: String = "",
@@ -57,11 +61,20 @@ val InputBorderColor = Color(0xFFC7D0D8)
 
 @Composable
 fun ProfileScreen(
-    userProfile: UserProfile,
+    viewModel: ProfileViewModel = viewModel(),
     onNavigateToHome: () -> Unit,
     onNavigateToJadwal: () -> Unit,
-    onNavigateToEditProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToEditProfile: (UserProfile) -> Unit,
 ) {
+    val userProfile = viewModel.profileData
+    val isLoading = viewModel.isLoading
+    val statusMessage = viewModel.statusMessage
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
     Scaffold(
         containerColor = BackgroundColor,
         bottomBar = {
@@ -69,7 +82,7 @@ fun ProfileScreen(
                 selectedItem = 2,
                 onNavigateToHome = onNavigateToHome,
                 onNavigateToJadwal = onNavigateToJadwal,
-                onNavigateToProfile = {}
+                onNavigateToProfile = onNavigateToProfile
             )
         }
     ) { paddingValues ->
@@ -89,20 +102,171 @@ fun ProfileScreen(
             )
             Spacer(modifier = Modifier.height(20.dp))
 
-            ProfileCard(userProfile, onNavigateToEditProfile)
+            if (isLoading && userProfile.namaLengkap.contains("Memuat")) {
+                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                Text("Memuat data profil...", color = TextColor)
+            } else {
+
+                if (statusMessage.isNotEmpty()) {
+                    Text(
+                        text = statusMessage,
+                        color = PrimaryColor,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                ProfileCard(
+                    userProfile,
+                    onEditClick = {
+                        val gson = Gson()
+                        val profileJson = gson.toJson(userProfile)
+                        val encodedJson = URLEncoder.encode(profileJson, StandardCharsets.UTF_8.toString())
+
+                        onNavigateToEditProfile(userProfile)},
+                    onLogoutClick = { viewModel.logout() }
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                DetailAlamatCard(userProfile)
+                Spacer(modifier = Modifier.height(24.dp))
+                DetailSekolahCard(userProfile)
+                Spacer(modifier = Modifier.height(24.dp))
+                ParentGuardianCard(userProfile)
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditProfileScreen(
+    currentProfile: UserProfile,
+    onSaveProfile: () -> Unit,
+    onNavigateBack: () -> Unit,
+    viewModel: ProfileViewModel = viewModel()
+) {
+    var namaLengkap by remember { mutableStateOf(currentProfile.namaLengkap) }
+    var jenisKelamin by remember { mutableStateOf(currentProfile.jenisKelamin) }
+    var tanggalLahir by remember { mutableStateOf(currentProfile.tanggalLahir) }
+    var agama by remember { mutableStateOf(currentProfile.agama) }
+    var nomorWhatsApp by remember { mutableStateOf(currentProfile.nomorWhatsApp) }
+    var namaOrtuWali by remember { mutableStateOf(currentProfile.namaOrtuWali) }
+    var nomorWaOrtuWali by remember { mutableStateOf(currentProfile.nomorWaOrtuWali) }
+    var provinsi by remember { mutableStateOf(currentProfile.provinsi) }
+    var kotaKabupaten by remember { mutableStateOf(currentProfile.kotaKabupaten) }
+    var kecamatan by remember { mutableStateOf(currentProfile.kecamatan) }
+    var desaKelurahan by remember { mutableStateOf(currentProfile.desaKelurahan) }
+    var alamatLengkap by remember { mutableStateOf(currentProfile.alamatLengkap) }
+    var asalSekolah by remember { mutableStateOf(currentProfile.asalSekolah) }
+    var kelas by remember { mutableStateOf(currentProfile.kelas) }
+
+    val scrollState = rememberScrollState()
+    val screenHorizontalPadding = 32.dp
+
+    Scaffold(
+        containerColor = BackgroundColor,
+        topBar = {
+            TopAppBar(
+                title = { Text("Edit Profil", fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack, enabled = !viewModel.isLoading) {
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
+                .padding(horizontal = screenHorizontalPadding)
+        ) {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            EditFormCard("Detail Pribadi") {
+                FormTextField(label = "Nama Lengkap", value = namaLengkap, onValueChange = { namaLengkap = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Email", value = currentProfile.email, onValueChange = { /* read only */ }, keyboardType = KeyboardType.Email, readOnly = true)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Jenis Kelamin", value = jenisKelamin, onValueChange = { jenisKelamin = it }, placeholder = "Laki-laki atau Perempuan", keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Tanggal Lahir", value = tanggalLahir, onValueChange = { tanggalLahir = it }, placeholder = "DD/MM/YYYY", keyboardType = KeyboardType.Number, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Agama", value = agama, onValueChange = { agama = it }, placeholder = "Islam, Kristen, Katolik, dst.", keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Nomor WhatsApp", value = nomorWhatsApp, onValueChange = { nomorWhatsApp = it }, placeholder = "Contoh: 081234567890", keyboardType = KeyboardType.Phone, readOnly = viewModel.isLoading)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
-            DetailAlamatCard(userProfile)
+
+            EditFormCard("Detail Alamat") {
+                FormTextField(label = "Provinsi", value = provinsi, onValueChange = { provinsi = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Kota/Kabupaten", value = kotaKabupaten, onValueChange = { kotaKabupaten = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Kecamatan", value = kecamatan, onValueChange = { kecamatan = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Desa/Kelurahan", value = desaKelurahan, onValueChange = { desaKelurahan = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Alamat Lengkap", value = alamatLengkap, onValueChange = { alamatLengkap = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
-            DetailSekolahCard(userProfile)
+
+            EditFormCard("Detail Sekolah") {
+                FormTextField(label = "Asal Sekolah", value = asalSekolah, onValueChange = { asalSekolah = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Kelas", value = kelas, onValueChange = { kelas = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
-            ParentGuardianCard(userProfile)
+
+            EditFormCard("Kontak Orang Tua/Wali") {
+                FormTextField(label = "Nama Orang Tua/Wali", value = namaOrtuWali, onValueChange = { namaOrtuWali = it }, keyboardType = KeyboardType.Text, readOnly = viewModel.isLoading)
+                Spacer(modifier = Modifier.height(16.dp))
+                FormTextField(label = "Nomor WhatsApp", value = nomorWaOrtuWali, onValueChange = { nomorWaOrtuWali = it }, placeholder = "Contoh: 081234567890", keyboardType = KeyboardType.Phone, readOnly = viewModel.isLoading)
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = {
+                    val updatedProfile = currentProfile.copy(
+                        namaLengkap = namaLengkap, jenisKelamin = jenisKelamin, tanggalLahir = tanggalLahir, agama = agama, nomorWhatsApp = nomorWhatsApp, namaOrtuWali = namaOrtuWali, nomorWaOrtuWali = nomorWaOrtuWali,
+                        provinsi = provinsi, kotaKabupaten = kotaKabupaten, kecamatan = kecamatan, desaKelurahan = desaKelurahan, alamatLengkap = alamatLengkap, asalSekolah = asalSekolah, kelas = kelas,
+                        telepon = nomorWhatsApp
+                    )
+                    viewModel.saveProfile(updatedProfile, onSuccess = onSaveProfile)
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !viewModel.isLoading
+            ) {
+                if (viewModel.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text(text = "Simpan", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-fun ProfileCard(userProfile: UserProfile, onEditClick: () -> Unit) {
+fun ProfileCard(
+    userProfile: UserProfile,
+    onEditClick: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -148,7 +312,7 @@ fun ProfileCard(userProfile: UserProfile, onEditClick: () -> Unit) {
                         color = TextColor
                     )
                     Text(
-                        text = userProfile.nomorWhatsApp.ifEmpty { userProfile.telepon },
+                        text = userProfile.nomorWhatsApp.ifEmpty { userProfile.telepon }.ifEmpty { "Nomor WA Belum Diisi" },
                         fontSize = 14.sp,
                         color = TextColor
                     )
@@ -157,222 +321,101 @@ fun ProfileCard(userProfile: UserProfile, onEditClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = onEditClick,
-                modifier = Modifier.fillMaxWidth(0.6f).height(40.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
-                shape = RoundedCornerShape(12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Profil",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Edit Profil", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Button(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                        .padding(end = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Profil",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Edit Profil", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                }
+
+                OutlinedButton(
+                    onClick = onLogoutClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                        .padding(start = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color.Red),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ExitToApp,
+                        contentDescription = "Logout",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Logout", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                }
             }
         }
     }
 }
-
 @Composable
 fun DetailAlamatCard(userProfile: UserProfile) {
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, PrimaryColor)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Detail Alamat", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-            Divider(color = TextColor.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
-            ProfileDetailRow(label = "Provinsi", value = userProfile.provinsi)
-            ProfileDetailRow(label = "Kota/Kabupaten", value = userProfile.kotaKabupaten)
-            ProfileDetailRow(label = "Kecamatan", value = userProfile.kecamatan)
-            ProfileDetailRow(label = "Desa/Kelurahan", value = userProfile.desaKelurahan)
-            ProfileDetailRow(label = "Alamat Lengkap", value = userProfile.alamatLengkap)
-        }
+    EditFormCard("Detail Alamat") {
+        ProfileDetailRow("Provinsi", userProfile.provinsi.ifEmpty { "-" })
+        ProfileDetailRow("Kota/Kabupaten", userProfile.kotaKabupaten.ifEmpty { "-" })
+        ProfileDetailRow("Kecamatan", userProfile.kecamatan.ifEmpty { "-" })
+        ProfileDetailRow("Desa/Kelurahan", userProfile.desaKelurahan.ifEmpty { "-" })
+        ProfileDetailRow("Alamat Lengkap", userProfile.alamatLengkap.ifEmpty { "-" })
     }
 }
 
 @Composable
 fun DetailSekolahCard(userProfile: UserProfile) {
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, PrimaryColor)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Detail Sekolah", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-            Divider(color = TextColor.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
-            ProfileDetailRow(label = "Asal Sekolah", value = userProfile.asalSekolah)
-            ProfileDetailRow(label = "Kelas", value = userProfile.kelas)
-        }
+    EditFormCard("Detail Sekolah") {
+        ProfileDetailRow("Asal Sekolah", userProfile.asalSekolah.ifEmpty { "-" })
+        ProfileDetailRow("Kelas", userProfile.kelas.ifEmpty { "-" })
     }
 }
 
 @Composable
 fun ParentGuardianCard(userProfile: UserProfile) {
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, PrimaryColor)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Kontak Orangtua/Wali", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-            Divider(color = TextColor.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
-            ProfileDetailRow(label = "Nama Orangtua/Wali", value = userProfile.namaOrtuWali)
-            ProfileDetailRow(label = "No Telepon", value = userProfile.nomorWaOrtuWali)
-        }
+    EditFormCard("Kontak Orang Tua/Wali") {
+        ProfileDetailRow("Nama Ortu/Wali", userProfile.namaOrtuWali.ifEmpty { "-" })
+        ProfileDetailRow("Nomor WA Ortu", userProfile.nomorWaOrtuWali.ifEmpty { "-" })
     }
 }
 
 @Composable
 fun ProfileDetailRow(label: String, value: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 8.dp)
-    ) {
-        Text(text = label, fontSize = 14.sp, color = TextColor)
-
-        Text(
-            text = value.ifEmpty { "-" },
-            fontSize = 16.sp,
-            color = Color.Black,
-            fontWeight = FontWeight.Medium
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Text(text = label, fontSize = 14.sp, color = TextColor, fontWeight = FontWeight.Medium)
+        Text(text = value, fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.SemiBold)
+        Divider(
+            modifier = Modifier.padding(top = 8.dp),
+            color = InputBorderColor.copy(alpha = 0.5f),
+            thickness = 0.5.dp
         )
-
-        Divider(color = TextColor.copy(alpha = 0.3f), thickness = 0.5.dp)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EditProfileScreen(
-    currentProfile: UserProfile,
-    onSaveProfile: (UserProfile) -> Unit,
-    onNavigateBack: () -> Unit
-) {
-    var namaLengkap by remember { mutableStateOf(currentProfile.namaLengkap) }
-    var jenisKelamin by remember { mutableStateOf(currentProfile.jenisKelamin) }
-    var tanggalLahir by remember { mutableStateOf(currentProfile.tanggalLahir) }
-    var agama by remember { mutableStateOf(currentProfile.agama) }
-    var nomorWhatsApp by remember { mutableStateOf(currentProfile.nomorWhatsApp) }
-    var namaOrtuWali by remember { mutableStateOf(currentProfile.namaOrtuWali) }
-    var nomorWaOrtuWali by remember { mutableStateOf(currentProfile.nomorWaOrtuWali) }
-    var provinsi by remember { mutableStateOf(currentProfile.provinsi) }
-    var kotaKabupaten by remember { mutableStateOf(currentProfile.kotaKabupaten) }
-    var kecamatan by remember { mutableStateOf(currentProfile.kecamatan) }
-    var desaKelurahan by remember { mutableStateOf(currentProfile.desaKelurahan) }
-    var alamatLengkap by remember { mutableStateOf(currentProfile.alamatLengkap) }
-    var asalSekolah by remember { mutableStateOf(currentProfile.asalSekolah) }
-    var kelas by remember { mutableStateOf(currentProfile.kelas) }
-
-    val scrollState = rememberScrollState()
-    val screenHorizontalPadding = 32.dp
-
-    Scaffold(
-        containerColor = BackgroundColor,
-        topBar = {
-            TopAppBar(
-                title = { Text("Edit Profil", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundColor)
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-                .padding(horizontal = screenHorizontalPadding)
-        ) {
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            EditFormCard("Detail Pribadi") {
-                FormTextField(label = "Nama Lengkap", value = namaLengkap, onValueChange = { namaLengkap = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Jenis Kelamin", value = jenisKelamin, onValueChange = { jenisKelamin = it }, placeholder = "Laki-laki atau Perempuan", keyboardType = KeyboardType.Text, readOnly = false, modifier = Modifier)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Tanggal Lahir", value = tanggalLahir, onValueChange = { tanggalLahir = it }, placeholder = "DD/MM/YYYY", keyboardType = KeyboardType.Number, readOnly = false, modifier = Modifier, trailingIcon = { Icon(imageVector = Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal", tint = TextColor) })
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Agama", value = agama, onValueChange = { agama = it }, placeholder = "Islam, Kristen, Katolik, dst.", keyboardType = KeyboardType.Text, readOnly = false, modifier = Modifier)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Nomor WhatsApp", value = nomorWhatsApp, onValueChange = { nomorWhatsApp = it }, placeholder = "Contoh: 081234567890", keyboardType = KeyboardType.Phone)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            EditFormCard("Detail Alamat") {
-                FormTextField(label = "Provinsi", value = provinsi, onValueChange = { provinsi = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Kota/Kabupaten", value = kotaKabupaten, onValueChange = { kotaKabupaten = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Kecamatan", value = kecamatan, onValueChange = { kecamatan = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Desa/Kelurahan", value = desaKelurahan, onValueChange = { desaKelurahan = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Alamat Lengkap", value = alamatLengkap, onValueChange = { alamatLengkap = it }, keyboardType = KeyboardType.Text)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            EditFormCard("Detail Sekolah") {
-                FormTextField(label = "Asal Sekolah", value = asalSekolah, onValueChange = { asalSekolah = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Kelas", value = kelas, onValueChange = { kelas = it }, keyboardType = KeyboardType.Text)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            EditFormCard("Kontak Orang Tua/Wali") {
-                FormTextField(label = "Nama Orang Tua/Wali", value = namaOrtuWali, onValueChange = { namaOrtuWali = it }, keyboardType = KeyboardType.Text)
-                Spacer(modifier = Modifier.height(16.dp))
-                FormTextField(label = "Nomor WhatsApp", value = nomorWaOrtuWali, onValueChange = { nomorWaOrtuWali = it }, placeholder = "Contoh: 081234567890", keyboardType = KeyboardType.Phone)
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    val updatedProfile = currentProfile.copy(
-                        namaLengkap = namaLengkap, jenisKelamin = jenisKelamin, tanggalLahir = tanggalLahir, agama = agama, nomorWhatsApp = nomorWhatsApp, namaOrtuWali = namaOrtuWali, nomorWaOrtuWali = nomorWaOrtuWali,
-                        provinsi = provinsi, kotaKabupaten = kotaKabupaten, kecamatan = kecamatan, desaKelurahan = desaKelurahan, alamatLengkap = alamatLengkap, asalSekolah = asalSekolah, kelas = kelas
-                    )
-                    onSaveProfile(updatedProfile)
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(text = "Simpan", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-        }
     }
 }
 
 @Composable
 fun EditFormCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = BorderStroke(1.dp, PrimaryColor.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
-            Divider(color = TextColor.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
+            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Spacer(modifier = Modifier.height(12.dp))
             content()
         }
     }
@@ -390,22 +433,21 @@ fun FormTextField(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(text = label, fontSize = 14.sp, color = TextColor, fontWeight = FontWeight.Medium)
+        Text(text = label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextColor)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(placeholder, color = Color.Gray) },
-            trailingIcon = trailingIcon,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            singleLine = true,
-            readOnly = readOnly,
             shape = RoundedCornerShape(12.dp),
+            trailingIcon = trailingIcon,
+            readOnly = readOnly,
+            singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = PrimaryColor,
-                unfocusedBorderColor = InputBorderColor,
-                cursorColor = PrimaryColor
+                unfocusedBorderColor = InputBorderColor
             )
         )
     }
@@ -418,75 +460,85 @@ fun BottomNavigationBar(
     onNavigateToJadwal: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
-    val primaryColor = Color(0xFF2C8AA4)
-    val unselectedColor = Color(0xFF8C8C8C)
-    val indicatorBg = Color(0xFFE5F1F4)
-    val indicatorIconColor = Color(0xFF3892A4)
-
-    Surface(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 12.dp, top = 4.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = Color.White,
-        shadowElevation = 8.dp
+            .padding(horizontal = 24.dp, vertical = 24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
+        Surface(
             modifier = Modifier
-                .height(76.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .height(72.dp),
+            shape = RoundedCornerShape(50.dp),
+            color = Color.White,
+            shadowElevation = 12.dp
         ) {
-            val items = listOf("Beranda", "Jadwal", "Profil")
-            val iconVectors = listOf(
-                Icons.Outlined.Home to Icons.Filled.Home,
-                Icons.Outlined.CalendarToday to Icons.Filled.CalendarToday,
-                Icons.Outlined.Person to Icons.Filled.Person
-            )
-
-            items.forEachIndexed { index, label ->
-                val isSelected = selectedItem == index
-
-                val onClickAction = when (index) {
-                    0 -> onNavigateToHome
-                    1 -> onNavigateToJadwal
-                    2 -> onNavigateToProfile
-                    else -> { {} }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .clickable(onClick = onClickAction)
-                        .weight(1f)
-                        .padding(vertical = 2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(if (isSelected) indicatorBg else Color.Transparent)
-                            .size(48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isSelected) iconVectors[index].second else iconVectors[index].first,
-                            contentDescription = label,
-                            modifier = Modifier.size(26.dp),
-                            tint = if (isSelected) indicatorIconColor else unselectedColor
-                        )
-                    }
-
-                    Text(
-                        text = label,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isSelected) primaryColor else unselectedColor
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                NavBarItem(
+                    icon = if (selectedItem == 0) Icons.Filled.Home else Icons.Outlined.Home,
+                    label = "Beranda",
+                    isSelected = selectedItem == 0,
+                    onClick = onNavigateToHome
+                )
+                NavBarItem(
+                    icon = if (selectedItem == 1) Icons.Filled.DateRange else Icons.Outlined.DateRange,
+                    label = "Jadwal",
+                    isSelected = selectedItem == 1,
+                    onClick = onNavigateToJadwal
+                )
+                NavBarItem(
+                    icon = if (selectedItem == 2) Icons.Filled.Person else Icons.Outlined.Person,
+                    label = "Profil",
+                    isSelected = selectedItem == 2,
+                    onClick = onNavigateToProfile
+                )
             }
         }
+    }
+}
+
+@Composable
+fun NavBarItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 48.dp, height = 28.dp)
+                .background(
+                    color = if (isSelected) Color(0xFFE0F2F1) else Color.Transparent,
+                    shape = RoundedCornerShape(14.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = if (isSelected) PrimaryColor else Color.Gray,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            color = if (isSelected) PrimaryColor else Color.Gray
+        )
     }
 }

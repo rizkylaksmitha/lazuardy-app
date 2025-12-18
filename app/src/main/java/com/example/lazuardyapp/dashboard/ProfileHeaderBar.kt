@@ -21,7 +21,8 @@ import com.example.lazuardyapp.ui.theme.TextColor
 
 @Composable
 fun ProfileHeaderBar(
-    name: String, isActive: Boolean,
+    name: String,
+    isActive: Boolean,
     onNavigateToProfile: () -> Unit,
     modifier: Modifier = Modifier) {
 

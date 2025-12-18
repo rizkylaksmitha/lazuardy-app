@@ -1,5 +1,6 @@
-package com.example.lazuardyapp.paymentscreen
+package com.example.lazuardyapp
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -21,21 +22,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.lazuardyapp.R
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.lazuardyapp.viewmodel.PaymentViewModel
+import com.example.lazuardyapp.SelectedPackageData
 import com.example.lazuardyapp.pilihpaket.packages
 import com.example.lazuardyapp.pilihpaket.formatRupiah
-import com.example.lazuardyapp.pilihpaket.LearningPackage // Import model paket
+import com.example.lazuardyapp.pilihpaket.LearningPackage
+import com.example.lazuardyapp.pilihpaket.PrimaryColor
+import java.text.NumberFormat
+import java.util.Locale
 
-// --- KONSTANTA & WARNA ---
-val PrimaryColor = Color(0xFF3892A4) // Warna utama (Teal/Biru)
-val TextColor = Color(0xFF333333)
-val CheckColor = Color(0xFF1CB455) // Hijau untuk tanda cek (sesuai gambar)
-val PackageCardColor = Color(0xFFE1F5FE) // Lighter blue/cyan background (sesuai gambar)
-val PriceColor = Color(0xFFE53935) // Merah untuk Harga (sesuai gambar)
+
+val CheckColor = Color(0xFF1CB455)
+val PackageCardColor = Color(0xFFE1F5FE)
+val PriceColor = Color(0xFFE53935)
 val BankBorderColor = Color(0xFFE0E0E0)
-val PackageBorderColor = Color(0xFF90CAF9) // Border card paket
+val PackageBorderColor = Color(0xFF90CAF9)
 
-// --- MODEL DATA UNTUK BANK ---
 data class Bank(
     val id: Int,
     val name: String,
@@ -43,8 +46,6 @@ data class Bank(
     val logoResId: Int
 )
 
-// Data Dummy Bank (sesuai urutan dan logo di gambar)
-// CATATAN: Ganti R.drawable.xxx dengan resource ID logo Anda yang sebenarnya
 val dummyBanks = listOf(
     Bank(1, "BCA", "XXXXXXXXX", R.drawable.ic_bca),
     Bank(2, "BRI", "XXXXXXXXX", R.drawable.ic_bri),
@@ -52,63 +53,81 @@ val dummyBanks = listOf(
     Bank(4, "BSI", "XXXXXXXXX", R.drawable.ic_bsi),
     Bank(5, "Mandiri", "XXXXXXXXX", R.drawable.ic_mandiri)
 )
-
-// --- MEMBUAT DATA PAKET LENGKAP UNTUK LAYAR PEMBAYARAN ---
-// Mengambil data dasar dari 'packages' dan menambahkan benefit lengkap
-fun getFullPackageDetails(basePackage: LearningPackage): LearningPackage {
-    // Benefit tambahan sesuai gambar
-    val fullBenefits = basePackage.benefits + listOf(
+fun getFullPackageBenefits(data: SelectedPackageData): List<String> {
+    return listOf(
+        "Sesi privat sebanyak ${data.totalSessions}x @90 menit",
+        "Modul belajar eksklusif",
+        "Soal-soal dan pembahasan",
+        "Konsultasi via WhatsApp",
         "Kuis interaktif untuk melatih dan mengukur pemahaman materi",
         "Pendampingan tugas dan pr sekolah",
         "Laporan perkembangan belajar rutin"
     )
-    return basePackage.copy(benefits = fullBenefits)
 }
-
-// =================================================================
-// KOMPONEN UTAMA (PaymentScreen)
-// =================================================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentScreen(
-    packageId: Int, // Menerima ID paket yang dipilih
-    onNavigateBack: () -> Unit,
-    onPaymentConfirmed: () -> Unit = {} // Aksi dummy setelah konfirmasi transfer
+    onNavigateToDashboard: () -> Unit,
+    paymentViewModel: PaymentViewModel = viewModel()
 ) {
-    // Mencari detail paket
-    val basePackage = packages.find { it.id == packageId }
-    val selectedPackage = basePackage?.let { getFullPackageDetails(it) }
+    val isProcessing = paymentViewModel.isProcessing
+    val selectedPackageData = paymentViewModel.selectedPackageData
+    val packagePrice = packages.find { it.id == selectedPackageData?.packageId }?.price ?: 0
 
     var selectedBank by remember { mutableStateOf<Bank?>(dummyBanks.firstOrNull()) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Pembayaran", fontWeight = FontWeight.SemiBold) },
+                title = { Text(text = "Pembayaran", fontWeight = FontWeight.SemiBold, color = TextColor) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onNavigateToDashboard) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 }
             )
         },
         bottomBar = {
-            // Tombol "Saya Sudah Transfer"
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)) {
                 Button(
-                    onClick = onPaymentConfirmed,
+                    onClick = {
+                        if (selectedPackageData != null && !isProcessing) {
+                            paymentViewModel.confirmTransfer(
+                                packageId = selectedPackageData.packageId,
+                                packageName = selectedPackageData.packageName,
+                                totalSessions = selectedPackageData.totalSessions,
+                                tutorName = selectedPackageData.tutorName,
+                                subject = selectedPackageData.subject,
+                                scheduleDays = selectedPackageData.scheduleDays,
+                                onSuccess = onNavigateToDashboard
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+                    enabled = selectedPackageData != null && !isProcessing
                 ) {
-                    Text("Saya Sudah Transfer", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    if (isProcessing) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("Saya Sudah Transfer", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
     ) { paddingValues ->
+
+        if (selectedPackageData == null) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Text("Error: Detail paket tidak ditemukan. Mohon pilih paket dari awal.", color = Color.Red, fontSize = 18.sp)
+            }
+            return@Scaffold
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,16 +136,13 @@ fun PaymentScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // 1. CARD INFORMASI PAKET
             item {
-                if (selectedPackage != null) {
-                    PackageInfoCard(selectedPackage)
-                } else {
-                    Text("Error: Detail paket tidak ditemukan.")
-                }
+                PackageInfoCard(
+                    data = selectedPackageData,
+                    totalPrice = packagePrice
+                )
             }
 
-            // 2. HEADER PILIH BANK
             item {
                 Text(
                     text = "Pilih Bank untuk Pembayaran",
@@ -136,12 +152,11 @@ fun PaymentScreen(
                 )
             }
 
-            // 3. LIST BANK (Bank Selection Card)
             item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp)) // Corner radius sesuai gambar
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color.White)
                         .border(1.dp, BankBorderColor, RoundedCornerShape(12.dp))
                 ) {
@@ -151,7 +166,6 @@ fun PaymentScreen(
                             isSelected = bank == selectedBank,
                             onSelect = { selectedBank = it }
                         )
-                        // Garis pemisah, kecuali item terakhir
                         if (index < dummyBanks.size - 1) {
                             Divider(color = BankBorderColor, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                         }
@@ -162,36 +176,31 @@ fun PaymentScreen(
     }
 }
 
-// =================================================================
-// KOMPONEN CARD INFORMASI PAKET
-// =================================================================
-
 @Composable
-fun PackageInfoCard(pkg: LearningPackage) {
-    val formattedPrice = formatRupiah(pkg.price)
+fun PackageInfoCard(data: SelectedPackageData, totalPrice: Int) {
+    val formattedPrice = formatRupiah(totalPrice)
+    val benefitsList = getFullPackageBenefits(data)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp), // Radius lebih besar di card utama
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = PackageCardColor),
         border = BorderStroke(1.dp, PackageBorderColor),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Icon + Nama Paket + Harga
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ikon Buku
                 Image(
-                    painter = painterResource(id = R.drawable.ic_book_light), // Ganti dengan resource buku Anda
+                    painter = painterResource(id = R.drawable.ic_book_light),
                     contentDescription = "Ikon Paket",
                     modifier = Modifier.size(36.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Paket ${pkg.sessions}x Pertemuan",
+                        text = data.packageName,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextColor
@@ -200,7 +209,7 @@ fun PackageInfoCard(pkg: LearningPackage) {
                         text = formattedPrice,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PriceColor // Warna merah
+                        color = PriceColor
                     )
                 }
             }
@@ -215,14 +224,12 @@ fun PackageInfoCard(pkg: LearningPackage) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // List Benefit
-            pkg.benefits.forEach { benefit ->
+            benefitsList.forEach { benefit ->
                 BenefitRow(benefit = benefit)
             }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp), color = PackageBorderColor)
 
-            // Row Harga Final (Bottom Row)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -271,10 +278,6 @@ fun BenefitRow(benefit: String) {
 }
 
 
-// =================================================================
-// KOMPONEN ITEM PILIH BANK
-// =================================================================
-
 @Composable
 fun BankSelectionItem(bank: Bank, isSelected: Boolean, onSelect: (Bank) -> Unit) {
     Row(
@@ -285,7 +288,6 @@ fun BankSelectionItem(bank: Bank, isSelected: Boolean, onSelect: (Bank) -> Unit)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Logo Bank
         Image(
             painter = painterResource(id = bank.logoResId),
             contentDescription = bank.name,
@@ -301,22 +303,20 @@ fun BankSelectionItem(bank: Bank, isSelected: Boolean, onSelect: (Bank) -> Unit)
                 fontWeight = FontWeight.SemiBold,
                 color = TextColor
             )
-            // Nomor VA
             Text(
-                text = "XXXXXXXXX",
+                text = bank.account,
                 fontSize = 14.sp,
                 color = TextColor.copy(alpha = 0.7f)
             )
         }
 
-        // Ikon Copy
         Icon(
-            painter = painterResource(id = R.drawable.ic_copy), // Ganti dengan resource ikon copy Anda
+            painter = painterResource(id = R.drawable.ic_copy),
             contentDescription = "Salin Nomor VA",
             tint = Color.Gray,
             modifier = Modifier
                 .size(20.dp)
-                .clickable { /* Logika Salin */ }
+                .clickable {  }
         )
     }
 }

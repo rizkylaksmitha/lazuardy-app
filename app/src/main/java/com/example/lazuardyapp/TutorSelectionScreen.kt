@@ -18,56 +18,41 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lazuardyapp.ui.screens.PrimaryColor
 import com.example.lazuardyapp.ui.theme.TextColor
-
-// --- PERBAIKAN UTAMA: Import TutorCard dari package root ---
 import com.example.lazuardyapp.TutorCard
-// Asumsi: data class Tutor dan val sampleTutors berada dalam package ini (com.example.lazuardyapp.tutorselection)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TutorSelectionScreen(
     onNavigateBack: () -> Unit,
     onTutorSelected: (Tutor) -> Unit,
-    selectedSubjectName: String // Subject passed from Dashboard
+    selectedSubjectName: String
 ) {
     var searchText by remember { mutableStateOf("") }
-
-    // ==========================================================
-    // PERBAIKAN LOGIKA FILTERING DI SINI
-    // ==========================================================
     val filteredTutors = remember(searchText, selectedSubjectName) {
 
-        // 1. FILTER BERDASARKAN SUBJEK YANG DIPILIH
         val subjectFilteredList = if (selectedSubjectName.equals("Semua Pelajaran", ignoreCase = true)) {
-            // Jika nama subjek adalah placeholder default, gunakan seluruh daftar
             sampleTutors
         } else {
-            // Filter daftar hanya untuk tutor yang mengajar subjek tersebut
             sampleTutors.filter { tutor ->
                 tutor.subject.equals(selectedSubjectName, ignoreCase = true)
             }
         }
 
-        // 2. Terapkan FILTER PENCARIAN pada daftar yang sudah difilter subjek
         subjectFilteredList.filter { tutor ->
-            // Jika kotak pencarian kosong, lewati filter ini (kembalikan true)
             if (searchText.isEmpty()) {
                 true
             } else {
-                // Cari di nama tutor ATAU subjek (agar lebih fleksibel)
                 tutor.name.contains(searchText, ignoreCase = true) ||
                         tutor.subject.contains(searchText, ignoreCase = true)
             }
         }
     }
-    // ==========================================================
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        // Tampilkan Subjek yang sedang dilihat di TopBar
                         text = selectedSubjectName,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
@@ -117,7 +102,6 @@ fun TutorSelectionScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            // List of Tutors
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)

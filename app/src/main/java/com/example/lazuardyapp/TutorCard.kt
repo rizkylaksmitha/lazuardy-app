@@ -1,4 +1,4 @@
-package com.example.lazuardyapp // Sesuaikan package Anda
+package com.example.lazuardyapp
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,13 +19,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.lazuardyapp.R
-// Import Tutor dari lokasi yang benar (setelah perbaikan sebelumnya)
 import com.example.lazuardyapp.tutorselection.Tutor
 
-// --- ASUMSI WARNA ---
-val PrimaryColor = Color(0xFF1E88E5) // Ganti dengan warna yang mendekati desain (teal/biru kehijauan)
-val ButtonColor = Color(0xFF3892A4) // Warna tombol di desain (Teal/biru kehijauan gelap)
+
+val PrimaryColor = Color(0xFF1E88E5)
+val ButtonColor = Color(0xFF3892A4)
 val TextColor = Color(0xFF333333)
 val SecondaryTextColor = Color(0xFF6B7280)
 
@@ -41,12 +39,10 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // --- BAGIAN ATAS (Foto, Nama, Rating, Level) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Placeholder Foto/Avatar
                 Box(
                     modifier = Modifier
                         .size(60.dp)
@@ -64,9 +60,7 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
                         color = TextColor
                     )
 
-                    // Subjek dan Level
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Icon Subjek
                         Icon(
                             imageVector = tutor.subjectIcon,
                             contentDescription = tutor.subject,
@@ -80,7 +74,6 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
                         Text(text = "•", fontSize = 14.sp, color = Color(0xFFBDBDBD))
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Icon Level
                         Icon(
                             imageVector = Icons.Default.School,
                             contentDescription = "Level",
@@ -91,7 +84,6 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
                         Text(text = tutor.level, fontSize = 14.sp, color = TextColor)
                     }
 
-                    // Rating
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Star,
@@ -111,7 +103,6 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Deskripsi Tutor
             Text(
                 text = tutor.description,
                 fontSize = 13.sp,
@@ -119,17 +110,13 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            // --- PERBAIKAN: Pisahkan Stats dan Tombol ke Dua Baris Berbeda ---
-
-            // Baris Stats (Pelajar, Sesi, Ketersediaan, WhatsApp)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start // Dimulai dari kiri
+                horizontalArrangement = Arrangement.Start
             ) {
-                // Pelajar
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Pelajar",
@@ -139,50 +126,45 @@ fun TutorCard(tutor: Tutor, onSelectTutor: (Tutor) -> Unit) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = "${tutor.studentCount} pelajar", fontSize = 12.sp, color = SecondaryTextColor)
 
-                // Sesi
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "•", fontSize = 12.sp, color = Color(0xFFBDBDBD))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "${tutor.sessionCount} sesi", fontSize = 12.sp, color = SecondaryTextColor)
 
-                // Ketersediaan
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "•", fontSize = 12.sp, color = Color(0xFFBDBDBD))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = tutor.availability, fontSize = 12.sp, color = SecondaryTextColor)
 
-                // WhatsApp Icon (Menggunakan padding untuk memisahkan dari teks)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "•", fontSize = 12.sp, color = Color(0xFFBDBDBD))
                 Spacer(modifier = Modifier.width(12.dp))
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_whatsapp), // Pastikan R.drawable.ic_whatsapp ada
+                    painter = painterResource(id = R.drawable.ic_whatsapp),
                     contentDescription = "WhatsApp",
                     tint = Color(0xFF25D366),
                     modifier = Modifier
                         .size(16.dp)
-                        .clickable { /* Handle WhatsApp click */ }
+                        .clickable {  }
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Divider(color = Color(0xFFF0F0F0)) // Divider di bawah stats, sebelum tombol (opsional, tergantung desain)
+            Divider(color = Color(0xFFF0F0F0))
 
-            // Baris Tombol (Di kanan bawah)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End // Posisikan tombol di kanan
+                horizontalArrangement = Arrangement.End
             ) {
                 Button(
                     onClick = { onSelectTutor(tutor) },
                     shape = RoundedCornerShape(8.dp),
-                    // Gunakan warna yang lebih sesuai desain (Teal/biru kehijauan)
                     colors = ButtonDefaults.buttonColors(containerColor = ButtonColor),
                     modifier = Modifier
                         .height(36.dp)
-                        .widthIn(min = 120.dp) // Pastikan tombol memiliki lebar minimum
+                        .widthIn(min = 120.dp)
                 ) {
                     Text(text = "Pilih Tutor", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }

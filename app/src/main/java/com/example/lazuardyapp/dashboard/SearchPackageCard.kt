@@ -22,8 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.example.lazuardyapp.ui.screens.PrimaryColor
 import kotlin.math.ceil
 
-// --- DEFINISI DATA (DIPINDAHKAN KEMBALI UNTUK MENGATASI UNRESOLVED REFERENCE) ---
-
 data class SubjectItem(
     val id: Int,
     val iconVector: ImageVector,
@@ -56,7 +54,6 @@ val allSubjects = listOf(
     SubjectItem(12, Icons.Default.Public, "Geografi", Color(0xFF009688)),
     SubjectItem(13, Icons.Default.Computer, "Informatika", Color(0xFF3F51B5)),
 )
-// --- AKHIR DEFINISI DATA ---
 
 
 @Composable
@@ -69,9 +66,6 @@ fun SearchPackageCard(
     val subjectsToDisplay = if (isExpanded) allSubjects else defaultSubjects
 
     val numColumns = 4
-    // Baris ini sudah benar, tetapi jika ada error kompilasi di sini,
-    // pastikan Anda tidak menggunakan properti yang dihapus pada List/Array.
-    // .size.toDouble() adalah cara yang benar.
     val rowCount = ceil(subjectsToDisplay.size.toDouble() / numColumns).toInt()
 
     val totalHeight = (rowCount * 90) + 16
